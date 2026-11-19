@@ -23,6 +23,7 @@ public:
   }
   std::uint32_t numerator() const noexcept { return numerator_; }
   std::uint32_t denominator() const noexcept { return denominator_; }
+  std::uint32_t ppqn() const noexcept { return ppqn_; }
   std::uint32_t ticks_per_beat() const noexcept { return ticks_per_beat_; }
   MusicalPosition locate(std::uint64_t ticks) const noexcept {
     const auto elapsed_beats = ticks / ticks_per_beat_;
