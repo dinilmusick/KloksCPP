@@ -16,6 +16,23 @@ int main() {
   const Meter huge(1,1,480);
   p=huge.locate(std::numeric_limits<std::uint64_t>::max());
   assert(p.beat==0 && p.tick==std::numeric_limits<std::uint64_t>::max()%1920);
+  for (auto ticks : {std::uint64_t{0}, std::uint64_t{1}, std::uint64_t{1919},
+                     std::uint64_t{1920}, std::uint64_t{123456789},
+                     std::numeric_limits<std::uint64_t>::max()}) {
+    assert(four.to_ticks(four.locate(ticks)) == ticks);
+    assert(seven.to_ticks(seven.locate(ticks)) == ticks);
+  }
+  for (auto invalid : {kloks::MusicalPosition{0,4,0},
+                       kloks::MusicalPosition{0,0,480}}) {
+    bool rejected=false;
+    try { (void)four.to_ticks(invalid); }
+    catch (const std::invalid_argument&) { rejected=true; }
+    assert(rejected);
+  }
+  bool overflow=false;
+  try { (void)four.to_ticks({std::numeric_limits<std::uint64_t>::max(),0,0}); }
+  catch (const std::overflow_error&) { overflow=true; }
+  assert(overflow);
   for (auto [n,d,ppqn] : {std::tuple<unsigned,unsigned,unsigned>{0,4,480}, {4,3,480}, {4,8,1}, {4,4,0}}) {
     bool rejected=false;
     try { Meter invalid(n,d,ppqn); (void)invalid; }
