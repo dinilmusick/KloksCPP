@@ -30,6 +30,21 @@ public:
             static_cast<std::uint32_t>(elapsed_beats % numerator_),
             static_cast<std::uint32_t>(ticks % ticks_per_beat_)};
   }
+  // Inverse of locate(): reject noncanonical positions and overflow.
+  std::uint64_t to_ticks(MusicalPosition position) const {
+    if (position.beat >= numerator_ || position.tick >= ticks_per_beat_)
+      throw std::invalid_argument("position outside meter");
+    const auto max = std::numeric_limits<std::uint64_t>::max();
+    if (position.bar > max / numerator_)
+      throw std::overflow_error("musical position overflow");
+    const auto beats = position.bar * numerator_ + position.beat;
+    if (beats < position.beat || beats > max / ticks_per_beat_)
+      throw std::overflow_error("musical position overflow");
+    const auto base = beats * ticks_per_beat_;
+    if (position.tick > max - base)
+      throw std::overflow_error("musical position overflow");
+    return base + position.tick;
+  }
 private:
   std::uint32_t numerator_, denominator_, ppqn_, ticks_per_beat_ = 0;
 };
