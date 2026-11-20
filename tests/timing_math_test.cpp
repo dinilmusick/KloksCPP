@@ -31,4 +31,12 @@ int main() {
         check(std::isfinite(TimingMath::microseconds_per_tick(tiny_bpm, 1)));
     }
 
+    check(TimingMath::microseconds_for_ticks(0, 120.0, 480) == 0);
+    check(TimingMath::microseconds_for_ticks(480, 120.0, 480) == 500000);
+    check(TimingMath::microseconds_for_ticks(1, 120.0, 480) == 1042);
+    check(TimingMath::microseconds_for_ticks(960, 60.0, 960) == 1000000);
+    expect_throws<std::invalid_argument>([] { TimingMath::microseconds_for_ticks(0, 0.0, 480); });
+    expect_throws<std::invalid_argument>([] { TimingMath::microseconds_for_ticks(1, 120.0, 0); });
+    expect_throws<std::overflow_error>([] { TimingMath::microseconds_for_ticks(UINT64_MAX, 1.0, 1); });
+    expect_throws<std::overflow_error>([&] { TimingMath::microseconds_for_ticks(1, tiny_bpm, 1); });
 }
