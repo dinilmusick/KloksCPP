@@ -18,7 +18,10 @@ public:
     }
     static long double microseconds_per_tick(double bpm, std::uint32_t ppqn) {
         validate(bpm, ppqn);
-        return 60000000.0L / (static_cast<long double>(bpm) * ppqn);
+        const long double duration = 60000000.0L / (static_cast<long double>(bpm) * ppqn);
+        if (!std::isfinite(duration))
+            throw std::overflow_error("transport tick duration overflow");
+        return duration;
     }
 private:
     static void validate(double bpm, std::uint32_t ppqn) {
