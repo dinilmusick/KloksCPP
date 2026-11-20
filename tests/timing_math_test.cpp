@@ -1,0 +1,25 @@
+#include "kloks/timing_math.hpp"
+#include <cmath>
+#include <cstdint>
+#include <limits>
+#include <stdexcept>
+
+void check(bool condition) { if (!condition) throw std::runtime_error("check failed"); }
+template <typename E, typename F> void expect_throws(F f) {
+    bool caught = false;
+    try { f(); } catch (const E&) { caught = true; }
+    if (!caught) throw std::runtime_error("expected exception");
+}
+int main() {
+    using kloks::TimingMath;
+    check(TimingMath::ticks_for_elapsed(0, 120.0, 480) == 0);
+    check(TimingMath::ticks_for_elapsed(500000, 120.0, 480) == 480);
+    check(TimingMath::ticks_for_elapsed(1000000, 60.0, 960) == 960);
+    check(TimingMath::ticks_for_elapsed(250000, 120.0, 480) == 240);
+    check(std::fabs(TimingMath::microseconds_per_tick(120.0, 480) - 1041.6666666666667L) < 1e-8L);
+    expect_throws<std::invalid_argument>([] { TimingMath::ticks_for_elapsed(1, 0, 480); });
+    expect_throws<std::invalid_argument>([] { TimingMath::ticks_for_elapsed(1, -1, 480); });
+    expect_throws<std::invalid_argument>([] { TimingMath::ticks_for_elapsed(1, std::numeric_limits<double>::quiet_NaN(), 480); });
+    expect_throws<std::invalid_argument>([] { TimingMath::ticks_for_elapsed(1, 120, 0); });
+    expect_throws<std::overflow_error>([] { TimingMath::ticks_for_elapsed(UINT64_MAX, 1e9, 480); });
+}
