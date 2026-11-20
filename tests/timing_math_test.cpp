@@ -22,4 +22,13 @@ int main() {
     expect_throws<std::invalid_argument>([] { TimingMath::ticks_for_elapsed(1, std::numeric_limits<double>::quiet_NaN(), 480); });
     expect_throws<std::invalid_argument>([] { TimingMath::ticks_for_elapsed(1, 120, 0); });
     expect_throws<std::overflow_error>([] { TimingMath::ticks_for_elapsed(UINT64_MAX, 1e9, 480); });
+    // On MSVC long double has double range: extremely slow tempo can overflow duration.
+    const double tiny_bpm = std::numeric_limits<double>::denorm_min();
+    const long double expected_duration = 60000000.0L / static_cast<long double>(tiny_bpm);
+    if (!std::isfinite(expected_duration)) {
+        expect_throws<std::overflow_error>([&] { TimingMath::microseconds_per_tick(tiny_bpm, 1); });
+    } else {
+        check(std::isfinite(TimingMath::microseconds_per_tick(tiny_bpm, 1)));
+    }
+
 }
