@@ -23,6 +23,17 @@ public:
             throw std::overflow_error("transport tick duration overflow");
         return duration;
     }
+    // Ceil to an integral microsecond boundary; floating-point tempos are approximate.
+    static std::uint64_t microseconds_for_ticks(std::uint64_t ticks, double bpm, std::uint32_t ppqn) {
+        validate(bpm, ppqn);
+        if (ticks == 0) return 0;
+        const long double duration = microseconds_per_tick(bpm, ppqn);
+        const long double elapsed = static_cast<long double>(ticks) * duration;
+        const long double upper = std::ldexp(1.0L, 64);
+        if (!std::isfinite(elapsed) || elapsed >= upper)
+            throw std::overflow_error("transport elapsed microseconds overflow");
+        return static_cast<std::uint64_t>(std::ceil(elapsed));
+    }
 private:
     static void validate(double bpm, std::uint32_t ppqn) {
         if (!std::isfinite(bpm) || bpm <= 0.0 || ppqn == 0)
