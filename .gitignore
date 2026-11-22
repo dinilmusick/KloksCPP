@@ -1,0 +1,5 @@
+build*/
+installed/
+consumer-build/
+*.obj
+*.o
