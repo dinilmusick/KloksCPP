@@ -42,7 +42,7 @@ class ServiceRegistry {
 public:
  explicit ServiceRegistry(void* host=nullptr):host_(host){}
  ServiceRegistry(const ServiceRegistry&)=delete;ServiceRegistry& operator=(const ServiceRegistry&)=delete;
- ~ServiceRegistry(){stop_all();}
+ ~ServiceRegistry() noexcept {try{stop_all();}catch(...){/* Destructors cannot report cleanup errors; explicitly stop before destruction. */}}
  void register_service(ServiceDefinition definition){
   if(definition.id.empty()||definition.version.empty()||definition.name.empty())throw ServiceError(ErrorCode::invalid_definition,definition.id,"id, name and version required");
   for(const auto& dep:definition.dependencies)if(dep.empty()||dep==definition.id)throw ServiceError(ErrorCode::invalid_definition,definition.id,"invalid dependency");
@@ -59,13 +59,23 @@ public:
  void require_capability(const std::string& id,const std::string& capability)const {auto it=services_.find(id);if(it==services_.end())throw ServiceError(ErrorCode::not_found,id,"service not found");if(!it->second.definition.capabilities.count(capability))throw ServiceError(ErrorCode::missing_capability,id,"capability unavailable");}
  bool started(const std::string& id)const{auto it=services_.find(id);return it!=services_.end()&&it->second.started;}
  std::vector<std::string> service_ids()const{std::vector<std::string> ids;for(const auto& [id,_]:services_)ids.push_back(id);return ids;}
- void stop_one(const std::string& id)noexcept{auto it=services_.find(id);if(it==services_.end()||!it->second.started)return;
-  it->second.started=false;try{if(it->second.definition.on_stop)it->second.definition.on_stop();}catch(...){};
+ // Explicit stop is fallible: on_stop failure must preserve the running service
+ // and dependency order so callers can retry cleanup. Destruction remains noexcept.
+ void stop_one(const std::string& id){
+  auto it=services_.find(id);if(it==services_.end()||!it->second.started)return;
+  try{
+   if(it->second.definition.on_stop)it->second.definition.on_stop();
+  }catch(const std::exception& e){
+   throw ServiceError(ErrorCode::host_failure,id,std::string("service stop failed: ")+e.what());
+  }catch(...){
+   throw ServiceError(ErrorCode::host_failure,id,"service stop failed: unknown exception");
+  }
+  it->second.started=false;
   startup_order_.erase(std::remove(startup_order_.begin(),startup_order_.end(),id),startup_order_.end());
   try{events_.emit("service.stopped",std::string(id));}catch(...){}
  }
- void stop_all()noexcept{while(!startup_order_.empty())stop_one(startup_order_.back());}
- void dispose()noexcept{stop_all();events_.clear();services_.clear();}
+ void stop_all(){while(!startup_order_.empty())stop_one(startup_order_.back());}
+ void dispose(){stop_all();events_.clear();services_.clear();}
  EventBus<Value>& events()noexcept{return events_;}
 private:void* host_=nullptr;
 };
