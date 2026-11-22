@@ -1,0 +1,55 @@
+name: KloksCPP pinned native foundations
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  native-adapters:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        build_type: [Debug, Release]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: dinilmusick/GutCPP
+          ref: 443ad9397c081dd596e784c50cff14c1ecad95c6
+          path: .deps/GutCPP
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: dinilmusick/KrnlCPP
+          ref: b2b9814e2fb7034a72d5f9c3b5fd6a3b005ed883
+          path: .deps/KrnlCPP
+          persist-credentials: false
+      - run: cmake -S . -B native-build -DBUILD_TESTING=ON -DKLOKSCPP_TEST_NATIVE_FOUNDATIONS=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+      - run: cmake --build native-build --config ${{ matrix.build_type }} --parallel 2
+      - run: ctest --test-dir native-build -C ${{ matrix.build_type }} -R '^native_adapter$' --output-on-failure
+  gcc-clang-adapters:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: dinilmusick/GutCPP
+          ref: 443ad9397c081dd596e784c50cff14c1ecad95c6
+          path: .deps/GutCPP
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: dinilmusick/KrnlCPP
+          ref: b2b9814e2fb7034a72d5f9c3b5fd6a3b005ed883
+          path: .deps/KrnlCPP
+          persist-credentials: false
+      - run: cmake -S . -B native-build -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} -DBUILD_TESTING=ON -DKLOKSCPP_TEST_NATIVE_FOUNDATIONS=ON
+      - run: cmake --build native-build --parallel 2
+      - run: ctest --test-dir native-build -R '^native_adapter$' --output-on-failure
