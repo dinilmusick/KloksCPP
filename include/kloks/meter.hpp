@@ -9,7 +9,7 @@ public:
  Meter(std::uint32_t numerator,std::uint32_t denominator,std::uint32_t ppqn):numerator_(numerator),denominator_(denominator),ppqn_(ppqn){
   if(!numerator||!ppqn||!denominator||(denominator&(denominator-1)))throw std::invalid_argument("invalid meter or PPQN");
   const auto q=static_cast<std::uint64_t>(ppqn)*4;
-  if(q%denominator||!q/denominator||q/denominator>std::numeric_limits<std::uint32_t>::max())throw std::invalid_argument("meter beat cannot be represented in ticks");
+  if(q%denominator||(q/denominator)==0||q/denominator>std::numeric_limits<std::uint32_t>::max())throw std::invalid_argument("meter beat cannot be represented in ticks");
   ticks_per_beat_=static_cast<std::uint32_t>(q/denominator);
  }
  std::uint32_t numerator()const noexcept{return numerator_;}
