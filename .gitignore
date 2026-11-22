@@ -3,3 +3,5 @@ installed/
 consumer-build/
 *.obj
 *.o
+
+.deps/

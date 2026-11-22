@@ -37,4 +37,10 @@ Pinned source comparison (2026-11-22): Kloks `286377a03a8c5973c592b61ccaaa3864d0
 - `EventBus` subscriptions have move-only RAII lifetime, and dispatch safely skips callbacks disposed during emission. Application-owned hosts must outlive their routers.
 - MIDI data and OSC packets are validated before encoding/decoding. `MidiDecoder` consumes complete packets; host stream framing is external. OSC parser limits decoded packets to 1 MiB and supports messages/flat bundles with aligned big-endian framing.
 
-Portability gaps still requiring independent verification: MSVC Windows, actual MIDI hardware, actual UDP networking, TypeScript differential fixtures and downstream GutCPP/KrnlCPP integration. See GitHub CI for exact commit evidence; no full parity is claimed.
+Remaining unverified areas: actual MIDI hardware, real UDP networking, TypeScript differential fixtures and wider platform services. MSVC and the external CMake consumer are certified by the core workflow; native adapters have independent CI. See GitHub CI for exact commit evidence; no full parity is claimed.
+
+## Optional pinned GutCPP/KrnlCPP interoperability
+
+Include `<kloks/native_adapters.hpp>` when actual native GutCPP and KrnlCPP headers are supplied. `call_gut` and `call_krnl` return each foundation's native structured results; `bind_krnl_service` borrows an existing native `krnl::Service` with lifecycle and operation forwarding. **The external service must outlive the KloksCPP registry**. No duplicate kernel or hidden worker is introduced. Standalone KloksCPP remains dependency-free.
+
+For opt-in CMake testing, use `-DKLOKSCPP_TEST_NATIVE_FOUNDATIONS=ON` and provide the pinned headers under `.deps/GutCPP/include`, `.deps/KrnlCPP/include`, or set the matching CMake path options. The dedicated native-foundations workflow verifies the exact pinned source and strict C++17 builds on Linux, macOS and Windows. It is not full TypeScript parity.
