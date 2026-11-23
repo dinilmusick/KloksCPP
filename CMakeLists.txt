@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-project(KloksCPP VERSION 0.1.0 LANGUAGES CXX)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/version.txt" ULTRST_RELEASE_VERSION LIMIT_COUNT 1)
+project(KloksCPP VERSION ${ULTRST_RELEASE_VERSION} LANGUAGES CXX)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 add_library(klokscpp INTERFACE)
